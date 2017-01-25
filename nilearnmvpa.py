@@ -5,7 +5,6 @@
 
 import nilearn
 import numpy as np
-get_ipython().magic('matplotlib inline')
 
 
 # In[2]:
@@ -25,9 +24,9 @@ mask_filename = '/Users/abby/Desktop/Research/SamplefMRISubject/bilat_vtmask_war
 # In[3]:
 
 # Visualize the ventral temporal mask
-from nilearn import plotting
-plotting.plot_roi(mask_filename, anat_filename,
-                 cmap='Paired')
+# from nilearn import plotting
+# plotting.plot_roi(mask_filename, anat_filename,
+#                  cmap='Paired')
 
 
 # In[ ]:
@@ -42,8 +41,6 @@ dnms_masked_extra8 = masker.fit_transform(dnms_filename)
 
 #good to check the training set fmri_masked and test set dnms_masked have the same number of voxels
 #data format = TRs, voxels
-print(fmri_masked.shape)
-print(dnms_masked.shape)
 
 
 # In[28]:
@@ -156,8 +153,7 @@ print(cv_score)
 # In[ ]:
 
 #the rest of this is for plotting my coefficient weights
-simple_coef = svc_split.coef_
-print(simple_coef.shape)
+simple_coefs = svc_split.coef_
 
 print(simple_coefs.shape)
 coef0 = simple_coefs[0, :]
@@ -179,69 +175,69 @@ coef_img3.to_filename('inception3_svc_weights.nii.gz')
 #I have 4 classifiers, so that's why I do each of these steps 4 times.
 
 
-# In[49]:
-
-from nilearn.plotting import plot_stat_map, show
-
-plot_stat_map(coef_img0, anat_filename,
-              title="SVM weights", display_mode="yx")
-
-show()
-
-
-# In[21]:
-
-from nilearn.plotting import plot_stat_map, show
-
-plot_stat_map(coef_img1, anat_filename,
-              title="SVM weights", display_mode="yx")
-
-show()
-
-
-# In[22]:
-
-from nilearn.plotting import plot_stat_map, show
-
-plot_stat_map(coef_img2, anat_filename,
-              title="SVM weights", display_mode="yx")
-
-show()
-
-
-# In[23]:
-
-from nilearn.plotting import plot_stat_map, show
-
-plot_stat_map(coef_img3, anat_filename,
-              title="SVM weights", display_mode="yx")
-
-show()
-
-
-# In[ ]:
-
-# here i test the classifier on new test data. I will use this later to correlate classifier evidence with RTs
-# Using predict_log_proba outputs a log probability score for every classifier for every TR
-dnms_prediction_split = svc_split.predict_log_proba(dnms_masked)
-
-
-# In[69]:
-
-# but this is useless without knowing which TRs go with which trials.
-dnms_RT = sio.loadmat('/Users/abby/Desktop/Research/SamplefMRISubject/Subject39_AllDNMSRT.mat')
-dnms_TR = sio.loadmat('/Users/abby/Desktop/Research/SamplefMRISubject/Subject39_AllDNMSTR.mat')
-RT = dnms_RT['DNMSAll']
-TR = dnms_TR['TRAll']
-print(R)
-
-
-# In[62]:
-
-runLabels[0, 60]
+# # In[49]:
+#
+# from nilearn.plotting import plot_stat_map, show
+#
+# plot_stat_map(coef_img0, anat_filename,
+#               title="SVM weights", display_mode="yx")
+#
+# show()
+#
+#
+# # In[21]:
+#
+# from nilearn.plotting import plot_stat_map, show
+#
+# plot_stat_map(coef_img1, anat_filename,
+#               title="SVM weights", display_mode="yx")
+#
+# show()
+#
+#
+# # In[22]:
+#
+# from nilearn.plotting import plot_stat_map, show
+#
+# plot_stat_map(coef_img2, anat_filename,
+#               title="SVM weights", display_mode="yx")
+#
+# show()
+#
+#
+# # In[23]:
+#
+# from nilearn.plotting import plot_stat_map, show
+#
+# plot_stat_map(coef_img3, anat_filename,
+#               title="SVM weights", display_mode="yx")
+#
+# show()
 
 
 # In[ ]:
+
+# # here i test the classifier on new test data. I will use this later to correlate classifier evidence with RTs
+# # Using predict_log_proba outputs a log probability score for every classifier for every TR
+# dnms_prediction_split = svc_split.predict_log_proba(dnms_masked)
+#
+#
+# # In[69]:
+#
+# # but this is useless without knowing which TRs go with which trials.
+# dnms_RT = sio.loadmat('/Users/abby/Desktop/Research/SamplefMRISubject/Subject39_AllDNMSRT.mat')
+# dnms_TR = sio.loadmat('/Users/abby/Desktop/Research/SamplefMRISubject/Subject39_AllDNMSTR.mat')
+# RT = dnms_RT['DNMSAll']
+# TR = dnms_TR['TRAll']
+# print(R)
+#
+#
+# # In[62]:
+#
+# runLabels[0, 60]
+#
+#
+# # In[ ]:
 
 
 
