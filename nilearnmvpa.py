@@ -1,13 +1,8 @@
 def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condition_label_filename, mask_filename = None):
-    # coding: utf-8
-
-    # In[1]:
 
     import nilearn
     import numpy as np
     import scipy.io as sio
-
-    # In[2]:
 
     #first: import nii files into python
 
@@ -16,26 +11,6 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
     anat_filename = anatomical_filename
     matlabLabels = sio.loadmat(condition_label_filename)
     labelArray = matlabLabels['StimuliMatrix']
-
-    # # fmri data for training
-    # fmri_filename = '/Users/abby/Desktop/Research/SamplefMRISubject/Inception_20160503_01/11-1-1LocalizerTR1000msSlice44Res2.feat/filtered_func_data.nii'
-    # # fmri run of my dnms task for training
-    # dnms_filename = '/Users/abby/Desktop/Research/SamplefMRISubject/Inception_20160503_01/6-1-1DNMSTR1000msSlice44Res25iso.feat/filtered_func_data.nii'
-    # # mprage
-    # anat_filename = '/Users/abby/Desktop/Research/SamplefMRISubject/Inception_20160503_01/2-1-1t1mpragesagp31mmiso_brain_skull.nii.gz'
-    # # vt mask I made for this subject
-    # mask_filename = '/Users/abby/Desktop/Research/SamplefMRISubject/bilat_vtmask_warped.nii'
-    # #matlabLabels = sio.loadmat('/Users/abby/Desktop/Research/SamplefMRISubject/leftrightfacesceneMatrixSubject39.mat')
-    #labelArray = matlabLabels['StimuliMatrix']
-    # In[3]:
-
-    # Visualize the ventral temporal mask
-    # from nilearn import plotting
-    # plotting.plot_roi(mask_filename, anat_filename,
-    #                  cmap='Paired')
-
-
-    # In[ ]:
 
     from nilearn.input_data import NiftiMasker
     masker = NiftiMasker(mask_img=mask_filename, standardize=True)
@@ -48,19 +23,13 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
     #good to check the training set fmri_masked and test set dnms_masked have the same number of voxels
     #data format = TRs, voxels
 
-
-    # In[28]:
-
-    #take out first 8 volumes
+    #take out first 8 volumes, this is specific to my experiment though.
     fmri_masked = fmri_masked_extra8[7 :, :]
     dnms_masked = dnms_masked_extra8[7 :, :]
     print(fmri_masked_extra8.shape)
     print(fmri_masked.shape)
 
-
-    # In[36]:
-
-    # Load TR label in formation
+    # Load TR label information. key for training the classifier!
 
     # need to turn the 4*numTrs array into a vector of strings
     # rests = 0, leftface = 1, rightface = 2, leftscene = 3, rightscene = 4
@@ -68,22 +37,8 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
     rest_mask = maxes == 0
     labelVector_numbers = np.argmax(labelArray, axis=0) + 1
     labelVector_numbers[rest_mask] = 0
-    labelVector_extra4 = labelVector_numbers.astype(str)
-    print(labelVector_extra4.shape)
-
-
-    # In[42]:
-
-    #we push the labels back by 4 TRs to account for hemodynamic lag
-    hemodynamicLag = np.array(["0", "0", "0", "0"])
-    labelVector =  np.append(hemodynamicLag, labelVector_extra4)
-    print(labelVector.shape)
-
-    #doing this tanked classifier accuracy, so we'll get rid of it for now
-    labelVector = labelVector_extra4
-
-
-    # In[43]:
+    labelVector = labelVector_numbers.astype(str)
+    # this might be a good place in your code to account for the hemodynamic lag. up to you though!
 
     condition_mask = labelVector != "0"
 
@@ -93,8 +48,6 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
     condition_norest = labelVector[condition_mask]
     print(condition_norest.shape)
 
-
-    # In[11]:
 
     # time to train the svc
     # NOTE: this is trained and tested on the same data set. so it's useless. just proof of concept.
@@ -112,8 +65,6 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
     print((prediction == condition_norest).sum() / float(len(condition_norest)))
 
 
-    # In[46]:
-
     #here we leave 30 TRs out for testing. much better idea!
 
     import sklearn.svm
@@ -127,8 +78,6 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
     print((prediction == condition_norest[-30:]).sum() / float(len(condition_norest[-30:])))
 
 
-    # In[45]:
-
     #even better than that, cross validation!!!
     from sklearn.cross_validation import KFold
 
@@ -140,41 +89,40 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
         print((prediction_split == target[test]).sum() / float(len(target[test])))
 
 
-    # In[40]:
-
     from sklearn.cross_validation import cross_val_score
     cv_score = cross_val_score(svc_split, fmri_masked_norest, target)
     print(cv_score)
 
 
-    # In[41]:
-
     # i don't know what the cv=cv score flag does....
     cv_score = cross_val_score(svc_split, fmri_masked_norest, target, cv=cv)
     print(cv_score)
 
+    # # here i test the classifier on new test data. I will use this later to correlate classifier evidence with RTs
+    # # Using predict_log_proba outputs a log probability score for every classifier for every TR
+    dnms_prediction_split = svc_split.predict_log_proba(dnms_masked)
+    classifier_scores = dnms_prediction_split
 
-    # In[ ]:
-
-    #the rest of this is for plotting my coefficient weights
-    simple_coefs = svc_split.coef_
-
-    print(simple_coefs.shape)
-    coef0 = simple_coefs[0, :]
-    coef1 = simple_coefs[1, :]
-    coef2 = simple_coefs[2, :]
-    coef3 = simple_coefs[3, :]
-
-    coef_img0 = masker.inverse_transform(coef0)
-    coef_img1 = masker.inverse_transform(coef1)
-    coef_img2 = masker.inverse_transform(coef2)
-    coef_img3 = masker.inverse_transform(coef3)
-
-
-    coef_img0.to_filename('inception0_svc_weights.nii.gz')
-    coef_img1.to_filename('inception1_svc_weights.nii.gz')
-    coef_img2.to_filename('inception2_svc_weights.nii.gz')
-    coef_img3.to_filename('inception3_svc_weights.nii.gz')
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #the rest of this commented out bit is for plotting your coefficient weights
+    # simple_coefs = svc_split.coef_
+    #
+    # print(simple_coefs.shape)
+    # coef0 = simple_coefs[0, :]
+    # coef1 = simple_coefs[1, :]
+    # coef2 = simple_coefs[2, :]
+    # coef3 = simple_coefs[3, :]
+    #
+    # coef_img0 = masker.inverse_transform(coef0)
+    # coef_img1 = masker.inverse_transform(coef1)
+    # coef_img2 = masker.inverse_transform(coef2)
+    # coef_img3 = masker.inverse_transform(coef3)
+    #
+    #
+    # coef_img0.to_filename('inception0_svc_weights.nii.gz')
+    # coef_img1.to_filename('inception1_svc_weights.nii.gz')
+    # coef_img2.to_filename('inception2_svc_weights.nii.gz')
+    # coef_img3.to_filename('inception3_svc_weights.nii.gz')
 
     #I have 4 classifiers, so that's why I do each of these steps 4 times.
 
@@ -219,30 +167,6 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
     # show()
 
 
-    # In[ ]:
-
-    # # here i test the classifier on new test data. I will use this later to correlate classifier evidence with RTs
-    # # Using predict_log_proba outputs a log probability score for every classifier for every TR
-    dnms_prediction_split = svc_split.predict_log_proba(dnms_masked)
-    classifier_scores = dnms_prediction_split
-    #
-    #
-    # # In[69]:
-    #
-    # # but this is useless without knowing which TRs go with which trials.
-    # dnms_RT = sio.loadmat('/Users/abby/Desktop/Research/SamplefMRISubject/Subject39_AllDNMSRT.mat')
-    # dnms_TR = sio.loadmat('/Users/abby/Desktop/Research/SamplefMRISubject/Subject39_AllDNMSTR.mat')
-    # RT = dnms_RT['DNMSAll']
-    # TR = dnms_TR['TRAll']
-    # print(R)
-    #
-    #
-    # # In[62]:
-    #
-    # runLabels[0, 60]
-    #
-    #
-    # # In[ ]:
     return classifier_scores
 
 
