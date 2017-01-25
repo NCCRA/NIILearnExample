@@ -17,17 +17,11 @@ def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condit
 
     # We give the masker a filename and retrieve a 2D array ready
     # for machine learning with scikit-learn
-    fmri_masked_extra8 = masker.fit_transform(fmri_filename)
-    dnms_masked_extra8 = masker.fit_transform(dnms_filename)
+    fmri_masked = masker.fit_transform(fmri_filename)
+    dnms_masked = masker.fit_transform(dnms_filename)
 
     #good to check the training set fmri_masked and test set dnms_masked have the same number of voxels
     #data format = TRs, voxels
-
-    #take out first 8 volumes, this is specific to my experiment though.
-    fmri_masked = fmri_masked_extra8[7 :, :]
-    dnms_masked = dnms_masked_extra8[7 :, :]
-    print(fmri_masked_extra8.shape)
-    print(fmri_masked.shape)
 
     # Load TR label information. key for training the classifier!
 
