@@ -1,4 +1,9 @@
 def nilearnmvpa(training_filename, testing_filename, anatomical_filename, condition_label_filename, mask_filename = None):
+    # Abigail Novick 1/25/2017
+    # Example mvpa function, takes fmri data to train and test. Anatomical image is optional, but nice for plotting.
+    # You need to have condition labels for your TRs for your training period.
+    # Masking is optional.
+
 
     import nilearn
     import numpy as np
